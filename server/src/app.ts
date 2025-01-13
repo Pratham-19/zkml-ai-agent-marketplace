@@ -11,17 +11,19 @@ const app = new Elysia()
     swagger({
       documentation: {
         info: {
-          title: "AURK API Documentation",
+          title: "Sage API Documentation",
           version: "1.0.0",
+          description: "API Documentation for SageOS",
         },
       },
+      path: "/docs",
     })
   )
   .use(healthRoutes)
   .listen(env.PORT);
 
 app.get("/", () => {
-  return "Aurk API";
+  return "Sage API";
 });
 
 logger.info(`🦊 Server running at ${app.server?.hostname}:${env.PORT}`);
