@@ -3,6 +3,7 @@ import { twitterEnvSchema, type TwitterConfig } from "./enviroment";
 import { TwitterScraper } from "./scraper";
 import { logger } from "../../utils/logger";
 import type { ITwitterProfile } from "../../types/twitter";
+import { redis } from "../../config/redis";
 
 export class TwitterBaseClient {
   twitterConfig: TwitterConfig;
@@ -22,8 +23,7 @@ export class TwitterBaseClient {
   }
 
   //TODO: GET TIMELINE / OUR, USER
-  //TODO: FETCH OWN POST
-  //TODO: CAHCE COOKIE
+  //TODO: FETCH OWN POSTs
 
   /**
    * Login and get user profile
@@ -40,7 +40,7 @@ export class TwitterBaseClient {
 
     if (cachedCookies) {
       logger.info("Using cached cookies");
-      await this.setCookiesFromArray(cachedCookies);
+      await this.twitterScraper.setCookies(cachedCookies);
     }
 
     logger.info("Logging into X/Twitter");
@@ -50,9 +50,8 @@ export class TwitterBaseClient {
           logger.info("Logged into X/Twitter");
           break;
         } else {
-          logger.info("No cookie found using credentials for X/Twitter");
-
-          this.twitterScraper.login(
+          logger.info("Attempting to login to X/Twitter");
+          await this.twitterScraper.login(
             username,
             password,
             email,
@@ -74,7 +73,7 @@ export class TwitterBaseClient {
           }
         }
       } catch (error) {
-        logger.error("Error while logging into X/Twitter:", error);
+        logger.error(`Error while logging into X/Twitter: ${error}`);
       }
 
       if (retries === 0) {
@@ -88,7 +87,8 @@ export class TwitterBaseClient {
     this.profile = await this.fetchProfile(username);
 
     if (this.profile) {
-      logger.info("Twitter user ID:", this.profile.id);
+      logger.info(`Twitter user ID: ${this.profile.id}`);
+      logger.info(`Twitter username: ${this.profile.username}`);
     } else {
       throw new Error("Failed to load profile");
     }
@@ -97,13 +97,16 @@ export class TwitterBaseClient {
     // await this.populateTimeline();
   }
 
-  async getCachedCookies(username: string): Promise<string[]> {
-    //TODO: ADD REDIS CACHINGN
-    return [];
+  async getCachedCookies(username: string): Promise<string[] | null> {
+    logger.debug(`Fetching cached cookies for: ${username}`);
+    const cachedCookies: string[] | null = await redis.get(
+      `twitter:${username}:cookies`
+    );
+    return cachedCookies;
   }
 
-  async setCookiesFromArray(cookiesArray: any[]) {
-    const cookieStrings = cookiesArray.map(
+  parseCookie(cookiesArray: any[]) {
+    return cookiesArray.map(
       (cookie) =>
         `${cookie.key}=${cookie.value}; Domain=${cookie.domain}; Path=${
           cookie.path
@@ -111,11 +114,15 @@ export class TwitterBaseClient {
           cookie.httpOnly ? "HttpOnly" : ""
         }; SameSite=${cookie.sameSite || "Lax"}`
     );
-    await this.twitterScraper.setCookies(cookieStrings);
   }
 
   async cacheCookie(username: string, cookie: any[]) {
-    //TODO: ADD REDIS CACHINGN
+    logger.debug(`Caching cookies for ${username}`);
+
+    const cookieString = this.parseCookie(cookie);
+    await redis.set(`twitter:${username}:cookies`, cookieString, {
+      ex: 60 * 60 * 24,
+    });
   }
 
   async fetchProfile(username: string): Promise<ITwitterProfile> {
