@@ -1,4 +1,5 @@
 import { healthRoutes } from "./health/health.controller";
 import { testRoutes } from "./test/controller";
+import { userRoutes } from "./user/controller";
 
-export { healthRoutes, testRoutes };
+export { healthRoutes, testRoutes, userRoutes };
