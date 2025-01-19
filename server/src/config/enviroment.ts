@@ -4,7 +4,7 @@ const DEFAULT_MAX_TWEET_LENGTH = 280;
 const REDIS_REST_URL = Bun.env.REDIS_REST_URL ?? "";
 const REDIS_REST_TOKEN = Bun.env.REDIS_REST_TOKEN ?? "";
 const ANON_HTTPS_PROXY = Bun.env.ANON_HTTPS_PROXY ?? "";
-
+const VOYAGE_API_KEY = Bun.env.VOYAGE_API_KEY ?? "";
 export const env = {
   NODE_ENV,
   PORT,
@@ -12,4 +12,5 @@ export const env = {
   REDIS_REST_TOKEN,
   REDIS_REST_URL,
   ANON_HTTPS_PROXY,
+  VOYAGE_API_KEY,
 };

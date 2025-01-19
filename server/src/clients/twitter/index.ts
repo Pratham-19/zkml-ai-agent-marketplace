@@ -39,6 +39,8 @@ export const TwitterClient = {
   async stop() {
     logger.info("Stopping Twitter client");
 
+    //TODO - see how to stop the client
+
     const tweetManager = new TweetManger();
 
     // Stop posting

@@ -22,9 +22,6 @@ export class TwitterBaseClient {
     this.twitterScraper = scraper.getScraper();
   }
 
-  //TODO: GET TIMELINE / OUR, USER
-  //TODO: FETCH OWN POSTs
-
   /**
    * Login and get user profile
    */
@@ -69,7 +66,7 @@ export class TwitterBaseClient {
             break;
           } else {
             retries--;
-            logger.warn(`Login attempt failed, ${retries} attempt left`);
+            logger.warn(`Login attempt failed, ${retries} attempt(s) left`);
           }
         }
       } catch (error) {
@@ -92,9 +89,6 @@ export class TwitterBaseClient {
     } else {
       throw new Error("Failed to load profile");
     }
-
-    // await this.loadLatestCheckedTweetId();
-    // await this.populateTimeline();
   }
 
   async getCachedCookies(username: string): Promise<string[] | null> {
