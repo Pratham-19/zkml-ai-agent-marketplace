@@ -1,16 +1,17 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-     extensions = [vector]
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
   id            String   @id @default(uuid())
+  name          String?
   walletAddress String   @unique @map("wallet_address")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -18,33 +19,37 @@ model User {
 }
 
 model Agent {
-  id         String        @id @default(uuid())
-  name       String        @unique
-  objective  String
-  topics     String[]
-  style      Json
-  adjectives String[]
-  owner      User          @relation(fields: [ownerId], references: [id])
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  memories   AgentMemory[]
-  ownerId    String
-  isActive   Boolean       @default(false)
+  id          String        @id @default(uuid())
+  name        String        @unique
+  imageURL    String        @map("image_url")
+  ticker      String
+  description String
+  objective   String
+  topics      String[]
+  social      SocialType    @default(TWITTER)
+  style       Json
+  adjectives  String[]
+  owner       User          @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  memories    AgentMemory[]
+  ownerId     String
+  isActive    Boolean       @default(false)
 }
 
 model AgentMemory {
-  id        String                @id @default(uuid())
+  id        String     @id @default(uuid())
   agentId   String
   type      MemoryType
   content   String
-  embedding Float[] 
+  embedding Float[]
   metadata  Json?
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
-  agent       Agent                 @relation(fields: [agentId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  agent     Agent      @relation(fields: [agentId], references: [id])
 
+  @@unique([agentId, type, content])
   @@index([agentId, type])
-  @@unique([agentId, type, content]) 
 }
 
 enum MemoryType {
@@ -52,4 +57,11 @@ enum MemoryType {
   LORE
   POST_EXAMPLE
   GENERATED_RESPONSE
+}
+
+enum SocialType {
+  TWITTER
+  TELEGRAM
+  DISCORD
+  TIKTOK
 }

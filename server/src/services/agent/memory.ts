@@ -5,15 +5,19 @@ import { env } from "../../config/enviroment";
 import { logger } from "../../utils/logger";
 import { error } from "elysia";
 
-export class BotMemoryService {
-  async upsertBotConfig(config: AgentConfig) {
-    const bot = await prisma?.agent.upsert({
+export class AgentMemoryService {
+  async upsertAgentConfig(config: AgentConfig) {
+    const agent = await prisma?.agent.upsert({
       where: { name: config.name },
       update: {
         objective: config.objective,
         topics: config.topics,
         style: config.style,
         adjectives: config.adjectives,
+        social: config.social,
+        ticker: config.ticker,
+        description: config.description,
+        imageURL: config.imageURL,
         isActive: config.isActive ?? false,
       },
       create: {
@@ -21,25 +25,29 @@ export class BotMemoryService {
         objective: config.objective,
         topics: config.topics,
         style: config.style,
+        social: config.social,
         adjectives: config.adjectives,
         isActive: config.isActive ?? false,
         ownerId: config.ownerId,
+        ticker: config.ticker,
+        description: config.description,
+        imageURL: config.imageURL,
       },
     });
 
-    if (!bot) {
+    if (!agent) {
       return null;
     }
 
-    await this.storeMemoriesBatch(bot.id, MemoryType.BIO, config.bio);
-    await this.storeMemoriesBatch(bot.id, MemoryType.LORE, config.lore);
+    await this.storeMemoriesBatch(agent.id, MemoryType.BIO, config.bio);
+    await this.storeMemoriesBatch(agent.id, MemoryType.LORE, config.lore);
     await this.storeMemoriesBatch(
-      bot.id,
+      agent.id,
       MemoryType.POST_EXAMPLE,
       config.postExamples
     );
 
-    return bot;
+    return agent;
   }
 
   private async storeMemoriesBatch(

@@ -1,15 +1,15 @@
 import { error } from "elysia";
 import prisma from "../../config/prisma";
-import { BotMemoryService } from "./memory";
+import { AgentMemoryService } from "./memory";
 import { logger } from "../../utils/logger";
-import { MemoryType, type Agent } from "@prisma/client";
+import { MemoryType } from "@prisma/client";
 import type { AgentConfig } from "../../types/agent";
 
-export class BotManager {
-  botMemoryService: BotMemoryService;
+export class AgentManager {
+  AgentMemoryService: AgentMemoryService;
 
   constructor() {
-    this.botMemoryService = new BotMemoryService();
+    this.AgentMemoryService = new AgentMemoryService();
   }
 
   async isActive(agentId: string): Promise<boolean> {
@@ -55,6 +55,10 @@ export class BotManager {
           chat: string[];
           post: string[];
         },
+        social: agent.social,
+        ticker: agent.ticker,
+        description: agent.description,
+        imageURL: agent.imageURL,
         adjectives: agent.adjectives,
         bio: agent.memories
           .filter((memory) => memory.type === MemoryType.BIO)
@@ -73,6 +77,36 @@ export class BotManager {
       logger.error(`Failed to get agent config: ${e}`);
       error(500, "Failed to get agent config");
       return null;
+    }
+  }
+
+  async isAgentActive(id: string): Promise<boolean> {
+    try {
+      logger.info(`Checking if agent with id ${id} is active`);
+
+      const agent = await prisma.agent.findUnique({
+        where: { id },
+      });
+
+      return agent?.isActive ?? false;
+    } catch (e) {
+      logger.error(`Failed to check if agent is active: ${e}`);
+      error(500, "Failed to check if agent is active");
+      return false;
+    }
+  }
+
+  async ifAgentExists(id: string): Promise<boolean> {
+    try {
+      const agent = await prisma.agent.findUnique({
+        where: { id },
+      });
+
+      return !!agent;
+    } catch (e) {
+      logger.error(`Failed to check if agent exists: ${e}`);
+      error(500, "Failed to check if agent exists");
+      return false;
     }
   }
 }

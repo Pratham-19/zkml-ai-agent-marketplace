@@ -3,7 +3,7 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { logger } from "./utils/logger";
 import { env } from "./config/enviroment";
-import { healthRoutes, testRoutes } from "./api";
+import { healthRoutes, testRoutes, userRoutes, agentRoutes } from "./api";
 
 const app = new Elysia()
   .use(cors())
@@ -21,6 +21,8 @@ const app = new Elysia()
   )
   .use(healthRoutes)
   .use(testRoutes)
+  .use(userRoutes)
+  .use(agentRoutes)
   .listen(env.PORT);
 
 app.get("/", () => {
