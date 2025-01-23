@@ -1,15 +1,25 @@
 import { logger } from "../../utils/logger";
 import { TwitterBaseClient } from "./base";
 import { TwitterPostClient } from "./post";
+import { decryptString } from "../../utils/crypto";
+import type { ITwitterCredentials } from "../../types/twitter";
 
 class TweetManger {
   baseClient: TwitterBaseClient;
   postClient: TwitterPostClient;
-  constructor() {
+  constructor({
+    twitterEmail,
+    twitterPassword,
+    twitterUsername,
+  }: {
+    twitterEmail: string;
+    twitterPassword: string;
+    twitterUsername: string;
+  }) {
     this.baseClient = new TwitterBaseClient({
-      TWITTER_EMAIL: Bun.env.TWITTER_EMAIL ?? "",
-      TWITTER_PASSWORD: Bun.env.TWITTER_PASSWORD ?? "",
-      TWITTER_USERNAME: Bun.env.TWITTER_USERNAME ?? "",
+      TWITTER_EMAIL: twitterEmail,
+      TWITTER_PASSWORD: twitterPassword,
+      TWITTER_USERNAME: twitterUsername,
       ENABLE_ACTION_PROCESSING: false,
       MAX_TWEET_LENGTH: 250,
       POST_INTERVAL_MAX: 3 * 60 * 60,
@@ -24,10 +34,22 @@ class TweetManger {
 }
 
 export const TwitterClient = {
-  async start() {
+  async start(encryptedCredentials: string) {
     logger.info("Starting Twitter client");
 
-    const tweetManager = new TweetManger();
+    const { email, username, password }: ITwitterCredentials = JSON.parse(
+      decryptString(encryptedCredentials)
+    );
+
+    if (!email || !username || !password) {
+      logger.error("Invalid Twitter credentials");
+      return;
+    }
+    const tweetManager = new TweetManger({
+      twitterEmail: email,
+      twitterPassword: password,
+      twitterUsername: username,
+    });
 
     // Login / generate session
     await tweetManager.baseClient.init();
@@ -35,15 +57,5 @@ export const TwitterClient = {
     // Start posting
     await tweetManager.postClient.startPosting();
     // await tweetManager.baseClient.start();
-  },
-  async stop() {
-    logger.info("Stopping Twitter client");
-
-    //TODO - see how to stop the client
-
-    const tweetManager = new TweetManger();
-
-    // Stop posting
-    await tweetManager.postClient.stopPosting();
   },
 };

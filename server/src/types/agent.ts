@@ -19,4 +19,5 @@ export interface AgentConfig {
   lore: string[];
   postExamples: string[];
   isActive?: boolean;
+  credentials: string;
 }

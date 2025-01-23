@@ -5,9 +5,11 @@ import { AgentManager } from "../../services/agent/manager";
 import type { AgentConfig } from "../../types/agent";
 import { SocialType } from "@prisma/client";
 import { TwitterClient } from "../../clients/twitter";
+import { encryptString } from "../../utils/crypto";
+
+const agentManager = new AgentManager();
 
 export class AgentServices {
-  agentManager = new AgentManager();
   async createAgent(context: Context) {
     const {
       adjectives,
@@ -23,6 +25,7 @@ export class AgentServices {
       description,
       imageURL,
       ticker,
+      credentials,
     } = context.body as AgentConfig;
     try {
       logger.info(`Checking if agent with name ${name} already exists`);
@@ -49,22 +52,24 @@ export class AgentServices {
 
       logger.info(`Creating agent with name ${name}`);
 
-      const agent =
-        await this.agentManager.AgentMemoryService.upsertAgentConfig({
-          adjectives,
-          bio,
-          lore,
-          name,
-          objective,
-          ownerId,
-          postExamples,
-          social,
-          style,
-          topics,
-          description,
-          imageURL,
-          ticker,
-        });
+      const encryptedCredentials = encryptString(JSON.stringify(credentials));
+
+      const agent = await agentManager.AgentMemoryService.upsertAgentConfig({
+        adjectives,
+        bio,
+        lore,
+        name,
+        objective,
+        ownerId,
+        postExamples,
+        social,
+        style,
+        topics,
+        description,
+        imageURL,
+        ticker,
+        credentials: encryptedCredentials,
+      });
 
       return {
         message: "Agent created successfully",
@@ -82,7 +87,16 @@ export class AgentServices {
   async getAllAgents() {
     try {
       logger.info("Fetching all agents");
-      const agents = await prisma.agent.findMany();
+      const agents = await prisma.agent.findMany({
+        select: {
+          updatedAt: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          id: true,
+          imageURL: true,
+        },
+      });
       return {
         agents,
       };
@@ -98,7 +112,7 @@ export class AgentServices {
   async getAgentById(context: Context) {
     const { id } = context.params;
     try {
-      const agentExists = await this.agentManager.ifAgentExists(id);
+      const agentExists = await agentManager.ifAgentExists(id);
       if (!agentExists) {
         return error(404, {
           error: "Agent not found",
@@ -141,7 +155,7 @@ export class AgentServices {
   async startAgentById(context: Context) {
     const { id } = context.params;
     try {
-      const agentExists = await this.agentManager.ifAgentExists(id);
+      const agentExists = await agentManager.ifAgentExists(id);
       if (!agentExists) {
         return error(404, {
           error: "Agent not found",
@@ -149,7 +163,7 @@ export class AgentServices {
         });
       }
 
-      const agentIsActive = await this.agentManager.isAgentActive(id);
+      const agentIsActive = await agentManager.isAgentActive(id);
       if (agentIsActive) {
         return error(400, {
           error: "Agent already active",
@@ -166,12 +180,12 @@ export class AgentServices {
 
       if (agent.social === SocialType.TWITTER) {
         // Start the Twitter agent
-        TwitterClient.start();
+        TwitterClient.start(agent.credentials);
       }
 
       return {
         message: "Agent started successfully",
-        agent,
+        agent: agent.name,
       };
     } catch (e) {
       logger.error(`Failed to start agent with id ${id}: ${e}`);
@@ -185,7 +199,7 @@ export class AgentServices {
   async stopAgentById(context: Context) {
     const { id } = context.params;
     try {
-      const agentExists = await this.agentManager.ifAgentExists(id);
+      const agentExists = await agentManager.ifAgentExists(id);
       if (!agentExists) {
         return error(404, {
           error: "Agent not found",
@@ -200,7 +214,7 @@ export class AgentServices {
       });
       return {
         message: "Agent stopped successfully",
-        agent,
+        agent: agent.name,
       };
     } catch (e) {
       logger.error(`Failed to stop agent with id ${id}: ${e}`);

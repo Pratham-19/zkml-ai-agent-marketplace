@@ -1,16 +1,55 @@
-import Elysia from "elysia";
+import Elysia, { error, type Context } from "elysia";
 import { TwitterClient } from "../../clients/twitter";
 import { AgentManager } from "../../services/agent/manager";
 import { logger } from "../../utils/logger";
 import { SocialType } from "@prisma/client";
+import { decryptString, encryptString } from "../../utils/crypto";
 
 export const testRoutes = new Elysia({ prefix: "/test" })
-  .get("/start", () => {
-    TwitterClient.start();
-  })
-  .get("/stop", () => {
-    TwitterClient.stop();
+  .post(
+    "/encrypt",
+    (context: Context) => {
+      console.log(context.body);
+      const { text } = context.body;
+      if (!text) {
+        return error(400, {
+          error: "Missing text",
+          message: "Please provide text to encrypt",
+        });
+      }
+      const encryptedText = encryptString(
+        JSON.stringify({
+          email: Bun.env.TWITTER_EMAIL ?? "",
+          password: Bun.env.TWITTER_PASSWORD ?? "",
+          username: Bun.env.TWITTER_USERNAME ?? "",
+        })
+      );
+      return { encryptedText };
+    },
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            text: { type: "string" },
+          },
+          required: ["text"],
+        },
+      },
+    }
+  )
+  .post("/decrypt", (context: Context) => {
+    const { encryptedText } = context.body;
+    if (!encryptedText) {
+      return error(400, {
+        error: "Missing encrypted text",
+        message: "Please provide text to decrypt",
+      });
+    }
+    const decryptedText = decryptString(encryptedText);
+    return { data: JSON.parse(decryptedText) };
   });
+
 // .get("/agent", () => {
 //   const agentManager = new AgentManager();
 //   AgentManager.botMemoryService.upsertBotConfig({

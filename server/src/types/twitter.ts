@@ -5,3 +5,9 @@ export interface ITwitterProfile {
   bio: string;
   nicknames: string[];
 }
+
+export interface ITwitterCredentials {
+  email: string;
+  username: string;
+  password: string;
+}

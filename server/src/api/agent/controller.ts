@@ -52,6 +52,7 @@ export const agentRoutes = new Elysia({
       postExamples: t.Array(t.String({ minLength: 3 }), {
         description: "The post examples of the agent",
       }),
+      credentials: t.String({}),
     }),
   })
   .get("/all", _agentService.getAllAgents)

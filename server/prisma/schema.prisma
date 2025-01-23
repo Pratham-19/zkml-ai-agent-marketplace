@@ -35,6 +35,7 @@ model Agent {
   memories    AgentMemory[]
   ownerId     String
   isActive    Boolean       @default(false)
+  credentials String
 }
 
 model AgentMemory {
