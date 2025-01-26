@@ -1,3 +1,4 @@
+import type { Tweet } from "agent-twitter-client";
 import { AgentManager } from "../../services/agent/manager";
 import { logger } from "../../utils/logger";
 import type { TwitterBaseClient } from "./base";
@@ -74,6 +75,142 @@ export class TwitterPostClient {
     };
 
     await postTweet();
+  }
+
+  async startMentionWatch() {
+    logger.info("Starting mention watch");
+
+    const watchMentions = async () => {
+      if (!this.agentId) {
+        logger.error("No agent found");
+        return;
+      }
+
+      const isLoggedIn = await this.baseClient.twitterScraper.isLoggedIn();
+      if (!isLoggedIn) {
+        logger.error("Not logged in");
+        const isAuthenticated = await this.baseClient.init();
+        if (!isAuthenticated) {
+          logger.error("Failed to authenticate");
+          return;
+        }
+      }
+
+      logger.debug(`Checking if agent is active for agentId: ${this.agentId}`);
+      const isActive = await this.agentManager.agentBase.isActive(this.agentId);
+
+      if (!isActive) {
+        logger.error("Agent is not active");
+        return;
+      }
+
+      const username = this.baseClient.twitterConfig.TWITTER_USERNAME;
+      const timeAgo =
+        this.baseClient.twitterConfig.TWITTER_POLL_INTERVAL * 1000;
+      const now = new Date();
+      const bufferTime = new Date(now.getTime() - timeAgo);
+
+      const query = `(@${username}) since:${bufferTime.toISOString()}`;
+
+      logger.info(`(@${username}) since:${bufferTime.toISOString()}`);
+
+      const tweetGenerator = this.baseClient.twitterScraper.searchTweets(
+        query,
+        200
+      );
+
+      for await (const tweet of tweetGenerator) {
+        if (tweet.username === username) {
+          continue;
+        }
+
+        const tweetTime = tweet.timeParsed?.getTime() || 0;
+        const cutoffTime = new Date().getTime() - timeAgo;
+
+        if (tweetTime < cutoffTime) continue;
+
+        const context = await this.buildTweetContext(tweet);
+        if (context) {
+          const response = await this.agentManager.postClient.generateReply(
+            this.agentId,
+            context,
+            username
+          );
+
+          if (response) {
+            await this.baseClient.twitterScraper.sendTweet(
+              this.parseTweet(response),
+              tweet.id
+            );
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+
+          logger.info(`Found mention from @${context?.mainTweet?.username}`);
+        }
+      }
+
+      setTimeout(watchMentions, timeAgo);
+    };
+
+    await watchMentions();
+  }
+
+  async buildTweetContext(tweet: Tweet) {
+    if (!tweet.id) return null;
+
+    const context: {
+      mainTweet: Tweet;
+      parentTweet: Tweet | null;
+      conversationTweets: Tweet[];
+      quotedTweet: Tweet | null;
+    } = {
+      mainTweet: tweet,
+      parentTweet: null,
+      conversationTweets: [],
+      quotedTweet: null,
+    };
+
+    // Get parent tweet if reply
+    if (tweet.inReplyToStatusId) {
+      const parent = await this.baseClient.twitterScraper.getTweet(
+        tweet.inReplyToStatusId
+      );
+      if (parent) {
+        context.parentTweet = parent;
+      }
+    }
+
+    // Get quoted tweet
+    if (tweet.quotedStatusId) {
+      const quoted = await this.baseClient.twitterScraper.getTweet(
+        tweet.quotedStatusId
+      );
+      if (quoted) {
+        context.quotedTweet = quoted;
+      }
+    }
+
+    // Get conversation tweets
+    if (tweet.conversationId && tweet.conversationId !== tweet.id) {
+      const searchGen = this.baseClient.twitterScraper.searchTweets(
+        `(conversation_id:${tweet.conversationId})`,
+        10
+      );
+
+      for await (const convTweet of searchGen) {
+        if (convTweet.id !== tweet.id) {
+          context.conversationTweets.push(convTweet);
+        }
+      }
+
+      // Sort by time
+      context.conversationTweets.sort(
+        (a, b) =>
+          (a.timeParsed?.getTime() || 0) - (b.timeParsed?.getTime() || 0)
+      );
+    }
+
+    return context;
   }
 
   async generateThread(content: string, splitStr: string) {

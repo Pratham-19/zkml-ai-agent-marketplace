@@ -24,9 +24,9 @@ class TweetManger {
       TWITTER_USERNAME: twitterUsername,
       ENABLE_ACTION_PROCESSING: false,
       MAX_TWEET_LENGTH: 250,
-      POST_INTERVAL_MAX: 3 * 60,
-      POST_INTERVAL_MIN: 1 * 60,
-      TWITTER_POLL_INTERVAL: 60 * 60,
+      POST_INTERVAL_MAX: 60 * 60, // 1 hour
+      POST_INTERVAL_MIN: 15 * 60, // 10 minutes
+      TWITTER_POLL_INTERVAL: 20 * 60, // 20 minutes
       TWITTER_RETRY_LIMIT: 3,
       TWITTER_SEARCH_ENABLE: false,
       TWITTER_TARGET_USERS: [],
@@ -59,6 +59,7 @@ export const TwitterClient = {
 
     // Start posting
     await tweetManager.postClient.startPosting();
+    await tweetManager.postClient.startMentionWatch();
     // await tweetManager.baseClient.start();
   },
 };

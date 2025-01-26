@@ -4,6 +4,7 @@ import { logger } from "../../utils/logger";
 import type { AgentBase } from "./base";
 import { AgentMemoryService } from "./memory";
 import { ToolService } from "./tools";
+import type { Tweet } from "agent-twitter-client";
 
 export class AgentPostService {
   baseClient: AgentBase;
@@ -42,9 +43,9 @@ export class AgentPostService {
       ${description}
       
       # Writing Style
-      - Tone: ${style!.all.join(", ")}
+     - Tone: ${style!.all.join(", ")}
       - Post Style: ${style!.post.join(", ")}
-      - Voice: ${adjectives.join(", ")}
+      - Voice: ${adjectives.join(", ")} 
       
       # Content Guidelines
       - Focus on ${topics.join(" or ")} without explicitly naming them
@@ -92,8 +93,110 @@ export class AgentPostService {
     return response;
   }
 
-  async generateReply(agentId: string) {
-    // img too
+  async generateReply(
+    agentId: string,
+    context: {
+      mainTweet: Tweet;
+      parentTweet: Tweet | null;
+      conversationTweets: Tweet[];
+      quotedTweet: Tweet | null;
+    },
+    socialName: string
+  ): Promise<string | undefined> {
+    const agent = await this.baseClient.getAgentById(agentId);
+    if (!agent) {
+      logger.error(`No agent found for id: ${agentId}`);
+      return;
+    }
+
+    const { style, name, ticker, description, topics, adjectives } = agent;
+
+    const { bio, lore } = await this.agentMemory.findSimilarMemories(
+      agentId,
+      context?.mainTweet?.text ?? "",
+      5
+    );
+
+    const systemPrompt = `
+      # Role: ${name} (@${socialName})
+      You are ${name}, expert in ${topics.join(", ")}. Ticker: ${ticker}.
+      
+      # Background
+      ${bio}
+      ${lore}
+      ${description}
+      
+      # Writing Style
+      - Tone: ${style!.all.join(", ")}
+      - Chat Style: ${style!.chat.join(", ")}
+      - Voice: ${adjectives.join(", ")}
+
+
+      # Content Guidelines
+      - Focus on ${topics.join(" or ")} without explicitly naming them
+      - Single tweet: Max 250 characters
+      - Length: 1-3 sentences (randomly choose)
+      - No emojis, or hashtags
+      - Write brief, authoritative statements only
+      - NEVER include meta-commentary or writing process descriptions
+      - NEVER say "Based on" or reference data sources
+      - ALWAYS maintain character voice and perspective
+      - STRICTLY follow the specified tone and style
+ 
+      
+      # Conversation
+      ${this.buildConversationString(context)}
+      
+      # Task
+      Reply to the tweet naturally in your voice, under 250 CHARACTERS, use tools if you don't know the answer.NO METATEXT DESCRIBING YOUR TASK LIKE "BASED ON" FOLLOW WRTITING STYLE AND CONTENT GUIDELINE.`;
+
+    logger.info(`Generating reply for tweet: ${context.mainTweet.id}`);
+
+    const response = await this.generateLLMResponse(systemPrompt, [
+      { role: "user", content: context?.mainTweet?.text },
+    ]);
+
+    if (!response) {
+      logger.error(
+        `Failed to generate response for tweet: ${context.mainTweet.id}`
+      );
+      return;
+    }
+    logger.info(`Generated response: ${response}`);
+    this.agentMemory.storeMemory(
+      agentId,
+      MemoryType.GENERATED_RESPONSE,
+      response
+    );
+    return response;
+  }
+
+  private buildConversationString(context: {
+    mainTweet: Tweet;
+    parentTweet: Tweet | null;
+    conversationTweets: Tweet[];
+    quotedTweet: Tweet | null;
+  }): string {
+    let conversation = "";
+
+    if (context.quotedTweet) {
+      conversation += `Quoted @${context.quotedTweet.username}: ${context.quotedTweet.text}\n\n`;
+    }
+
+    if (context.parentTweet) {
+      conversation += `Parent @${context.parentTweet.username}: ${context.parentTweet.text}\n\n`;
+    }
+
+    conversation += `@${context.mainTweet.username}: ${context.mainTweet.text}\n\n`;
+
+    if (context.conversationTweets.length > 0) {
+      conversation += "Previous:\n";
+      context.conversationTweets.forEach((tweet) => {
+        conversation += `@${tweet.username}: ${tweet.text} at ${tweet.timeParsed}\n`;
+      });
+    }
+
+    return conversation;
   }
 
   async generateLLMResponse(

@@ -142,7 +142,8 @@ export class AgentMemoryService {
 
   async findSimilarMemories(agentId: string, query: string, limit: number = 3) {
     try {
-      const queryEmbedding = await this.getEmbedding([query]);
+      const sanitizedQuery = query.replace(/[^\w\s]/gi, "").trim();
+      const queryEmbedding = await this.getEmbedding([sanitizedQuery]);
       if (!queryEmbedding || queryEmbedding.length === 0) {
         throw new Error("Failed to generate query embedding");
       }
