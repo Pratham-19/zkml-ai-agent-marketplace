@@ -55,32 +55,11 @@ export class TwitterPostClient {
       }
 
       if (content.includes("<thread>")) {
-        const tweets = content.split("<thread>");
-        let previousTweetId: string | null = null;
-
-        for (const tweet of tweets) {
-          if (!previousTweetId) {
-            const response = await this.baseClient.twitterScraper.sendTweet(
-              tweet.trim()
-            );
-            const data = await response.json();
-
-            previousTweetId =
-              data?.data?.create_tweet?.tweet_results?.result?.rest_id;
-            logger.debug(`Previous tweet id: ${previousTweetId}`);
-          } else {
-            const response = await this.baseClient.twitterScraper.sendTweet(
-              tweet.trim(),
-              previousTweetId
-            );
-            const data = await response.json();
-            previousTweetId =
-              data?.data?.create_tweet?.tweet_results?.result?.rest_id;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
+        await this.generateThread(content, "<thread>");
       } else {
-        await this.baseClient.twitterScraper.sendTweet(content);
+        await this.baseClient.twitterScraper.sendTweet(
+          this.parseTweet(content)
+        );
       }
       const minTime = this.baseClient.twitterConfig.POST_INTERVAL_MIN;
       const maxTime = this.baseClient.twitterConfig.POST_INTERVAL_MAX;
@@ -95,5 +74,35 @@ export class TwitterPostClient {
     };
 
     await postTweet();
+  }
+
+  async generateThread(content: string, splitStr: string) {
+    const tweets = content.split(splitStr);
+    let previousTweetId: string | null = null;
+
+    for (const tweet of tweets) {
+      if (!previousTweetId) {
+        const response = await this.baseClient.twitterScraper.sendTweet(
+          this.parseTweet(tweet)
+        );
+        const data = await response.json();
+
+        previousTweetId =
+          data?.data?.create_tweet?.tweet_results?.result?.rest_id;
+      } else {
+        const response = await this.baseClient.twitterScraper.sendTweet(
+          this.parseTweet(tweet),
+          previousTweetId
+        );
+        const data = await response.json();
+        previousTweetId =
+          data?.data?.create_tweet?.tweet_results?.result?.rest_id;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  parseTweet(content: string) {
+    return content.trim().substring(0, 280);
   }
 }
