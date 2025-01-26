@@ -11,10 +11,12 @@ class TweetManger {
     twitterEmail,
     twitterPassword,
     twitterUsername,
+    agentId,
   }: {
     twitterEmail: string;
     twitterPassword: string;
     twitterUsername: string;
+    agentId: string;
   }) {
     this.baseClient = new TwitterBaseClient({
       TWITTER_EMAIL: twitterEmail,
@@ -22,19 +24,19 @@ class TweetManger {
       TWITTER_USERNAME: twitterUsername,
       ENABLE_ACTION_PROCESSING: false,
       MAX_TWEET_LENGTH: 250,
-      POST_INTERVAL_MAX: 3 * 60 * 60,
-      POST_INTERVAL_MIN: 30 * 60,
+      POST_INTERVAL_MAX: 3 * 60,
+      POST_INTERVAL_MIN: 1 * 60,
       TWITTER_POLL_INTERVAL: 60 * 60,
       TWITTER_RETRY_LIMIT: 3,
       TWITTER_SEARCH_ENABLE: false,
       TWITTER_TARGET_USERS: [],
     });
-    this.postClient = new TwitterPostClient(this.baseClient);
+    this.postClient = new TwitterPostClient(this.baseClient, agentId);
   }
 }
 
 export const TwitterClient = {
-  async start(encryptedCredentials: string) {
+  async start(encryptedCredentials: string, agentId: string) {
     logger.info("Starting Twitter client");
 
     const { email, username, password }: ITwitterCredentials = JSON.parse(
@@ -49,6 +51,7 @@ export const TwitterClient = {
       twitterEmail: email,
       twitterPassword: password,
       twitterUsername: username,
+      agentId,
     });
 
     // Login / generate session

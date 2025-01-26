@@ -25,7 +25,7 @@ export class TwitterBaseClient {
   /**
    * Login and get user profile
    */
-  async init() {
+  async init(): Promise<boolean> {
     let retries = this.twitterConfig.TWITTER_RETRY_LIMIT;
     const username = this.twitterConfig.TWITTER_USERNAME;
     const password = this.twitterConfig.TWITTER_PASSWORD;
@@ -86,9 +86,11 @@ export class TwitterBaseClient {
     if (this.profile) {
       logger.info(`Twitter user ID: ${this.profile.id}`);
       logger.info(`Twitter username: ${this.profile.username}`);
+      return true;
     } else {
       throw new Error("Failed to load profile");
     }
+    return false;
   }
 
   async getCachedCookies(username: string): Promise<string[] | null> {

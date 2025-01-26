@@ -54,7 +54,7 @@ export class AgentServices {
 
       const encryptedCredentials = encryptString(JSON.stringify(credentials));
 
-      const agent = await agentManager.AgentMemoryService.upsertAgentConfig({
+      const agent = await agentManager.agentMemory.upsertAgentConfig({
         adjectives,
         bio,
         lore,
@@ -112,7 +112,7 @@ export class AgentServices {
   async getAgentById(context: Context) {
     const { id } = context.params;
     try {
-      const agentExists = await agentManager.ifAgentExists(id);
+      const agentExists = await agentManager.agentBase.ifExists(id);
       if (!agentExists) {
         return error(404, {
           error: "Agent not found",
@@ -155,7 +155,7 @@ export class AgentServices {
   async startAgentById(context: Context) {
     const { id } = context.params;
     try {
-      const agentExists = await agentManager.ifAgentExists(id);
+      const agentExists = await agentManager.agentBase.ifExists(id);
       if (!agentExists) {
         return error(404, {
           error: "Agent not found",
@@ -163,7 +163,7 @@ export class AgentServices {
         });
       }
 
-      const agentIsActive = await agentManager.isAgentActive(id);
+      const agentIsActive = await agentManager.agentBase.isActive(id);
       if (agentIsActive) {
         return error(400, {
           error: "Agent already active",
@@ -180,7 +180,7 @@ export class AgentServices {
 
       if (agent.social === SocialType.TWITTER) {
         // Start the Twitter agent
-        TwitterClient.start(agent.credentials);
+        TwitterClient.start(agent.credentials, agent.id);
       }
 
       return {
@@ -199,7 +199,7 @@ export class AgentServices {
   async stopAgentById(context: Context) {
     const { id } = context.params;
     try {
-      const agentExists = await agentManager.ifAgentExists(id);
+      const agentExists = await agentManager.agentBase.ifExists(id);
       if (!agentExists) {
         return error(404, {
           error: "Agent not found",

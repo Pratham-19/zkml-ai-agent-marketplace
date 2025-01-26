@@ -15,6 +15,9 @@ const ALGORITHM_KEY_SIZE = 16;
 const PBKDF2_NAME = "sha256";
 const PBKDF2_SALT_SIZE = 16;
 const PBKDF2_ITERATIONS = 32767;
+const CLAUDE_API_KEY = Bun.env.CLAUDE_API_KEY ?? "";
+const CRYPTOCOMPARE_NEWS_API = Bun.env.CRYPTOCOMPARE_NEWS_API ?? "";
+const TAVILY_API_KEY = Bun.env.TAVILY_API_KEY ?? "";
 
 export const env = {
   NODE_ENV,
@@ -32,4 +35,7 @@ export const env = {
   PBKDF2_NAME,
   PBKDF2_SALT_SIZE,
   PBKDF2_ITERATIONS,
+  CLAUDE_API_KEY,
+  CRYPTOCOMPARE_NEWS_API,
+  TAVILY_API_KEY,
 };

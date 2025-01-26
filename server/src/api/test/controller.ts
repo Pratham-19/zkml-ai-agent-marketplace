@@ -1,8 +1,4 @@
 import Elysia, { error, type Context } from "elysia";
-import { TwitterClient } from "../../clients/twitter";
-import { AgentManager } from "../../services/agent/manager";
-import { logger } from "../../utils/logger";
-import { SocialType } from "@prisma/client";
 import { decryptString, encryptString } from "../../utils/crypto";
 
 export const testRoutes = new Elysia({ prefix: "/test" })

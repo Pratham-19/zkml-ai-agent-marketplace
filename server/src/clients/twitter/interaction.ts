@@ -8,6 +8,7 @@ export class TwitterInteractionClient {
   }
 
   //Priority
+  //TODO: get menitons sorted and reply to them
   //TODO: CHECK FOR COMMENTS ON TWEET AND REPLY TO THEM
   //TODO: GET TIMELINE / OUR, USER
   //TODO: POST: TWEET, RETWEET, LIKE, QUOTE TWEET

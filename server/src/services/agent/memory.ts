@@ -19,6 +19,7 @@ export class AgentMemoryService {
         description: config.description,
         imageURL: config.imageURL,
         isActive: config.isActive ?? false,
+        credentials: config.credentials,
       },
       create: {
         name: config.name,
@@ -32,6 +33,7 @@ export class AgentMemoryService {
         ticker: config.ticker,
         description: config.description,
         imageURL: config.imageURL,
+        credentials: config.credentials,
       },
     });
 
@@ -173,6 +175,9 @@ export class AgentMemoryService {
         bio: result.filter((r) => r.type === MemoryType.BIO),
         lore: result.filter((r) => r.type === MemoryType.LORE),
         postExamples: result.filter((r) => r.type === MemoryType.POST_EXAMPLE),
+        generatedResponse: result.filter(
+          (r) => r.type === MemoryType.GENERATED_RESPONSE
+        ),
       };
 
       return organized;

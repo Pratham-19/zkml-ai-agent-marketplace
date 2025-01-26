@@ -56,7 +56,11 @@ export const agentRoutes = new Elysia({
     }),
   })
   .get("/all", _agentService.getAllAgents)
-  .get("/:id", _agentService.getAgentById)
+  .get("/:id", _agentService.getAgentById, {
+    params: t.Object({
+      id: t.String({}),
+    }),
+  })
   // .put("/:id", _agentService.updateAgentById, {
   //   body: t.Object({
   //     objective: t.String({
@@ -98,8 +102,16 @@ export const agentRoutes = new Elysia({
   //     }),
   //   }),
   // })
-  .put("/:id/start", _agentService.startAgentById)
-  .put("/:id/stop", _agentService.stopAgentById);
+  .put("/:id/start", _agentService.startAgentById, {
+    params: t.Object({
+      id: t.String({}),
+    }),
+  })
+  .put("/:id/stop", _agentService.stopAgentById, {
+    params: t.Object({
+      id: t.String({}),
+    }),
+  });
 
 //TODO
 //4. route to update agent by id
