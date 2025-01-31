@@ -11,6 +11,8 @@ import {
   Copy,
   TrendingDown,
   TrendingUp,
+  ThumbsDown,
+  ThumbsUp,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
@@ -211,7 +213,7 @@ const TradeValueIndicator = ({ amount }) => {
   }
 };
 
-const formatTimeAgo = (timestamp) => {
+const formatTimeAgo = (timestamp: string | number | Date) => {
   const now = new Date();
   const date = new Date(timestamp);
   const diffSeconds = Math.floor((now - date) / 1000);
@@ -290,7 +292,158 @@ export default function Token() {
 
   return (
     <div className="grid min-h-[80vh] grid-cols-5">
-      <div className="col-span-1">info</div>
+      <div className="col-span-1 divide-y divide-gray-800">
+        {/* Token Info */}
+        <div className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/dummy-token.jpg"
+                width={32}
+                height={32}
+                alt="USDC"
+                className="rounded-full"
+              />
+              <span className="font-semibold">GAIA</span>
+            </div>
+            <div className="text-sm font-mono text-gray-400 break-all">
+              0XEPd...dnj3
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 hover:bg-gray-800"
+              >
+                <Copy className="h-3 w-3 text-gray-400" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-gray-800 font-medium text-gray-400 hover:bg-gray-800"
+            >
+              <Globe className="mr-1 h-4 w-4" />
+              Website
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-gray-800 font-medium text-gray-400 hover:bg-gray-800"
+            >
+              <Twitter className="mr-1 h-4 w-4" />
+              Twitter
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-gray-800 font-medium text-gray-400 hover:bg-gray-800"
+            >
+              <Send className="mr-1 h-4 w-4" />
+              Telegram
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 divide-x divide-gray-800 text-center">
+          {[
+            { label: "30m", value: "+0%", color: "text-green-500" },
+            { label: "1H", value: "0%", color: "text-gray-400" },
+            { label: "2H", value: "+0%", color: "text-green-500" },
+            { label: "4H", value: "-0.01%", color: "text-red-500" },
+            { label: "8H", value: "+0%", color: "text-green-500" },
+            { label: "24H", value: "-0.01%", color: "text-red-500" },
+          ].map((item, i) => (
+            <div key={i} className="p-3">
+              <div className="text-xs text-gray-400">{item.label}</div>
+              <div className={`text-sm ${item.color}`}>{item.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-3 divide-x divide-gray-800">
+          {[
+            { label: "Liquidity", value: "$23.2B" },
+            { label: "FDV", value: "$9.56B" },
+            { label: "Total Supply", value: "9.56B" },
+            { label: "Markets", value: "3.6K" },
+            { label: "Holders", value: "3.59M" },
+            { label: "Watchers", value: "2" },
+          ].map((metric, i) => (
+            <div key={i} className="p-3 text-center">
+              <div className="text-xs text-gray-400">{metric.label}</div>
+              <div className="text-sm font-medium">{metric.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Sentiment */}
+        <div className="p-4 space-y-2">
+          <div className="flex justify-between items-center">
+            <div className="text-sm font-medium">Community Trust</div>
+            <div className="text-sm">15</div>
+          </div>
+          <div className="flex gap-2 items-center">
+            <div className="flex-1 bg-gray-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 rounded-full"
+                style={{ width: "93.33%" }}
+              ></div>
+            </div>
+            <div className="text-xs text-gray-400">93.33%</div>
+          </div>
+          <div className="flex justify-between text-sm">
+            <div className="flex items-center gap-1 text-green-500">
+              <ThumbsUp className="h-4 w-4" /> 14
+            </div>
+            <div className="flex items-center gap-1 text-red-500">
+              <ThumbsDown className="h-4 w-4" /> 1
+            </div>
+          </div>
+        </div>
+
+        {/* Top Holders */}
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm font-medium">TOP 10 HOLDERS</div>
+            <div className="text-sm text-gray-400">32.7734%</div>
+          </div>
+          <ScrollArea className="h-[200px]">
+            <div className="space-y-2">
+              {[
+                { address: "9WzDXwBbmk", percent: "10.1028%" },
+                { address: "AVzP2GeRmq", percent: "5.203%" },
+                { address: "Binance", percent: "5.0363%" },
+                { address: "A8nPhpCJqt", percent: "3.8276%" },
+                { address: "Circle", percent: "3.5287%" },
+                { address: "Drift Prot...", percent: "1.6128%" },
+                { address: "DBD8hAwLDR", percent: "1.0843%" },
+                { address: "9DiruRpjnA", percent: "1.012%" },
+                { address: "3csxXZKah5", percent: "0.729%" },
+                { address: "Kraken", percent: "0.6365%" },
+              ].map((holder, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center hover:bg-gray-800/50 p-2 rounded"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-400">{i + 1}</div>
+                    <div className="text-sm text-blue-400">
+                      {holder.address}
+                    </div>
+                    <Copy className="h-3 w-3 text-gray-400 cursor-pointer" />
+                  </div>
+                  <div className="text-sm">{holder.percent}</div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
       {/* Middle chart column */}
       <div className="col-span-3 flex flex-col border-x border-gray-800">
         {/* Top price info section - More compact */}
@@ -345,67 +498,71 @@ export default function Token() {
               <div>BY</div>
               <div></div>
             </div>
-            <div className="divide-y divide-gray-800">
-              {trades.map((trade, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-[1.5fr_1.5fr_1.5fr_1.5fr_1.5fr_1.5fr_40px]  items-center gap-2 p-3 text-sm hover:bg-gray-900/30"
-                >
-                  {/* Time */}
-                  <div className="text-gray-400">
-                    {formatTimeAgo(trade.timestamp)}
-                  </div>
+            <ScrollArea className="flex-1 h-[200px]">
+              <div className="divide-y divide-gray-800">
+                {trades.map((trade, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-[1.5fr_1.5fr_1.5fr_1.5fr_1.5fr_1.5fr_40px]  items-center gap-2 p-3 text-sm hover:bg-gray-900/30"
+                  >
+                    {/* Time */}
+                    <div className="text-gray-400">
+                      {formatTimeAgo(trade.timestamp)}
+                    </div>
 
-                  {/* Type */}
-                  <div className="flex items-center gap-2">
-                    {trade.type === "buy" ? (
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-red-500" />
-                    )}
-                    <span
-                      className={
-                        trade.type === "buy" ? "text-green-500" : "text-red-500"
-                      }
+                    {/* Type */}
+                    <div className="flex items-center gap-2">
+                      {trade.type === "buy" ? (
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      )}
+                      <span
+                        className={
+                          trade.type === "buy"
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }
+                      >
+                        {trade.type}
+                      </span>
+                    </div>
+
+                    {/* Total with Size Indicator */}
+                    <div className="flex items-center gap-2 font-medium">
+                      <TradeValueIndicator amount={trade.total} />
+                      {trade.total}
+                    </div>
+
+                    {/* Amount ETH */}
+                    <div
+                      className={`font-medium ${trade.type === "buy" ? "text-red-500" : "text-green-500"}`}
                     >
-                      {trade.type}
-                    </span>
+                      {trade.amountETH}
+                    </div>
+
+                    {/* Amount Token */}
+                    <div
+                      className={`font-medium ${trade.type === "sell" ? "text-red-500" : "text-green-500"}`}
+                    >
+                      {trade.amountToken}
+                    </div>
+
+                    {/* Trader */}
+                    <div className="font-mono text-[#66B3FF]">{trade.by}</div>
+
+                    {/* External Link */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 hover:bg-gray-800"
+                    >
+                      <ExternalLink className="size-4 text-gray-400" />
+                    </Button>
                   </div>
-
-                  {/* Total with Size Indicator */}
-                  <div className="flex items-center gap-2 font-medium">
-                    <TradeValueIndicator amount={trade.total} />
-                    {trade.total}
-                  </div>
-
-                  {/* Amount ETH */}
-                  <div
-                    className={`font-medium ${trade.type === "buy" ? "text-red-500" : "text-green-500"}`}
-                  >
-                    {trade.amountETH}
-                  </div>
-
-                  {/* Amount Token */}
-                  <div
-                    className={`font-medium ${trade.type === "sell" ? "text-red-500" : "text-green-500"}`}
-                  >
-                    {trade.amountToken}
-                  </div>
-
-                  {/* Trader */}
-                  <div className="font-mono text-[#66B3FF]">{trade.by}</div>
-
-                  {/* External Link */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 hover:bg-gray-800"
-                  >
-                    <ExternalLink className="size-4 text-gray-400" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
           <TabsContent value="holders" className="mt-0">
             <div className="">
@@ -482,7 +639,7 @@ export default function Token() {
           </div>
 
           {/* Amount Input */}
-          <div className="space-y-4 px-4">
+          <div className="space-y-4 p-4">
             <div>
               <label className="text-sm font-medium text-gray-400">
                 Amount ({tradeType === "buy" ? "ETH" : "GAIA"})
