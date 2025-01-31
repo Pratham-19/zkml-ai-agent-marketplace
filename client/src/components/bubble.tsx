@@ -1,127 +1,78 @@
 "use client";
 
-import { BubblesUtils } from "@/lib/bubbles.utls";
-import { PixiUtils } from "@/lib/pixi.utils";
-import { PriceChangePercentage } from "@/types/nav";
-import dynamic from "next/dynamic";
+import { PixiUtils } from "@//lib/pixi.utils";
+import { appConfig, BubblesUtils } from "@/lib/bubbles.utls";
+import { CoingeckoCoinData, PriceChangePercentage } from "@/types/nav";
+
 import * as PIXI from "pixi.js";
 import React, { useEffect, useMemo, useState } from "react";
+import { Skeleton } from "./ui/skeleton";
 
 type Props = {
-  coins: any[];
-  width?: number;
-  height?: number;
+  coins: CoingeckoCoinData[];
 };
 
-// Modified appConfig to use props
-const getAppConfig = (width: number, height: number) => ({
-  width,
-  height,
-  speed: 0.005,
-  elasticity: 0.005,
-  wallDamping: 0.5,
-  maxCircleSize: 250,
-  minCircleSize: width > 920 ? 30 : 15,
-});
+const { width, height, maxCircleSize, minCircleSize } = appConfig;
 
-function Bubbles({ coins = [], width = 800, height = 600 }: Props) {
+export default function Bubbles({ coins = [] }: Props) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
   const [circles, setCircles] = useState<PIXI.Circle[] | null>(null);
   const [bubbleSort, setBubbleSort] = useState(PriceChangePercentage.HOUR);
-  const [app, setApp] = useState<PIXI.Application | null>(null);
+
   const appRef = React.useRef<HTMLDivElement>(null);
 
-  const appConfig = useMemo(() => getAppConfig(width, height), [width, height]);
-
   const scalingFactor = useMemo(() => {
-    return BubblesUtils.getScalingFactor(coins, bubbleSort, appConfig);
-  }, [bubbleSort, coins, appConfig]);
+    return BubblesUtils.getScalingFactor(coins, bubbleSort);
+  }, [bubbleSort, coins]);
 
-  // Initialize circles when coins data changes
   useEffect(() => {
-    if (coins.length > 0) {
-      const shapes = BubblesUtils.generateCircles(
+    if (coins) {
+      const scalingFactor = BubblesUtils.getScalingFactor(
         coins,
-        scalingFactor,
         PriceChangePercentage.HOUR,
-        appConfig,
       );
+      const shapes = BubblesUtils.generateCircles(coins, scalingFactor);
       setCircles(shapes);
     }
-  }, [coins, scalingFactor, appConfig]);
+  }, [coins]);
 
-  // Initialize PIXI application with drag support
   useEffect(() => {
-    const initPixi = async () => {
-      if (!appRef.current || !circles) return;
-
-      const pixiApp = new PIXI.Application();
-      await pixiApp.init({
-        width: appConfig.width,
-        height: appConfig.height,
-        backgroundColor: "#0e1010",
-        antialias: true,
-      });
-
-      appRef.current.appendChild(pixiApp.canvas);
-      setApp(pixiApp);
-
+    async function initPixi() {
+      if (!circles) return;
       const imageSprites: PIXI.Sprite[] = [];
       const textSprites: PIXI.Text[] = [];
       const text2Sprites: PIXI.Text[] = [];
       const circleGraphics: PIXI.Sprite[] = [];
 
-      // Add drag event handlers
-      let isDragging = false;
-      let selectedCircle: any = null;
-      let dragStartPos = { x: 0, y: 0 };
+      const app = new PIXI.Application({
+        width,
+        height,
+        antialias: true,
+      });
 
-      pixiApp.canvas.addEventListener(
-        "click",
-        (e: MouseEvent) =>
-          !isDragging && BubblesUtils.handleEmptySpaceClick(e, circles),
+      const appContainer = appRef.current;
+
+      await app.init();
+
+      appContainer?.appendChild(app.canvas);
+      appContainer?.children[0].addEventListener("click", (e: unknown) =>
+        BubblesUtils.handleEmptySpaceClick(e as MouseEvent, circles),
       );
 
-      // Create and add sprites with drag functionality
+      const loadTextures = circles.map(() =>
+        PIXI.Assets.load("/dummy-token.jpg"),
+      );
+      await Promise.all(loadTextures);
+
       for (let i = 0; i < circles.length; i++) {
         const circle = circles[i];
+
         const container = PixiUtils.createContainer(circle);
 
-        // Add drag functionality to container
-        container.eventMode = "dynamic";
-        container.cursor = "pointer";
-
-        container
-          .on("pointerdown", function (event) {
-            isDragging = true;
-            selectedCircle = circle;
-            dragStartPos = event.global.clone();
-            circle.vx = 0;
-            circle.vy = 0;
-            this.alpha = 0.8;
-          })
-          .on("pointerup", function () {
-            isDragging = false;
-            selectedCircle = null;
-            this.alpha = 1;
-          })
-          .on("pointerupoutside", function () {
-            isDragging = false;
-            selectedCircle = null;
-            this.alpha = 1;
-          })
-          .on("pointermove", function (event) {
-            if (isDragging && selectedCircle) {
-              const newPosition = event.global;
-              selectedCircle.x = newPosition.x;
-              selectedCircle.y = newPosition.y;
-              this.position.set(newPosition.x, newPosition.y);
-            }
-          });
-
-        const imageSprite = PixiUtils.createImageSprite(circle);
-        imageSprites.push(imageSprite);
-        container.addChild(imageSprite);
+        const imageSprite = await PixiUtils.createImageSprite(circle);
+        // imageSprites.push(imageSprite);
+        // container.addChild(imageSprite);
 
         const circleGraphic = new PIXI.Sprite(
           PixiUtils.createGradientTexture(circle.radius * 4, circle.color),
@@ -130,82 +81,65 @@ function Bubbles({ coins = [], width = 800, height = 600 }: Props) {
         circleGraphics.push(circleGraphic);
         container.addChild(circleGraphic);
 
+        // Create the text
         const text = PixiUtils.createText(circle);
         container.addChild(text);
         textSprites.push(text);
 
+        // Create the second text
         const text2 = PixiUtils.createText2(circle, PriceChangePercentage.HOUR);
+
         container.addChild(text2);
         text2Sprites.push(text2);
 
-        pixiApp.stage.addChild(container);
+        app.stage.addChild(container);
       }
 
-      // Modified update ticker to account for dragging
       const ticker = BubblesUtils.update(
         circles,
         imageSprites,
         textSprites,
         text2Sprites,
         circleGraphics,
-        isDragging,
       );
-
       setTimeout(() => {
-        pixiApp.ticker.add(ticker);
+        app.ticker.add(ticker);
         setIsLoading(false);
       }, 200);
 
       return () => {
-        pixiApp.ticker.remove(ticker);
-        pixiApp.canvas.removeEventListener("click", (e: MouseEvent) =>
-          BubblesUtils.handleEmptySpaceClick(e, circles),
+        app.ticker.remove(ticker);
+        appContainer?.children[0]?.removeEventListener("click", (e: unknown) =>
+          BubblesUtils.handleEmptySpaceClick(e as MouseEvent, circles),
         );
-        pixiApp.destroy(true, {
-          children: true,
-          texture: true,
-          baseTexture: true,
-        });
       };
-    };
+    }
 
     initPixi();
-  }, [circles, appConfig]);
+  }, [circles]);
 
-  // Update circles when bubble sort changes
   useEffect(() => {
     if (circles) {
-      const { maxCircleSize, minCircleSize } = appConfig;
+      const max = maxCircleSize;
+      const min = minCircleSize;
 
       circles.forEach((circle) => {
         if (!circle[bubbleSort]) return;
 
         const radius = Math.abs(Math.floor(circle[bubbleSort] * scalingFactor));
-        circle.targetRadius =
-          radius > maxCircleSize
-            ? maxCircleSize
-            : radius > minCircleSize
-              ? radius
-              : minCircleSize;
+        circle.targetRadius = radius > max ? max : radius > min ? radius : min;
         circle.color = circle[bubbleSort] > 0 ? "green" : "red";
         if (circle.text2) {
           circle.text2.text = circle[bubbleSort].toFixed(2) + "%";
         }
       });
     }
-  }, [bubbleSort, coins, circles, scalingFactor, appConfig]);
-
+  }, [bubbleSort, coins, circles, scalingFactor]);
   return (
-    <div className="flex flex-col-reverse overflow-hidden rounded bg-zinc-900 px-2 md:flex-col">
-      <div
-        className="w-full overflow-hidden rounded border-2 border-gray-800 bg-zinc-900"
-        ref={appRef}
-      ></div>
-      {isLoading && <h2>loading</h2>}
+    <div className="flex flex-col-reverse">
+      {/* <NavigationBar bubbleSort={bubbleSort} setBubbleSort={setBubbleSort} /> */}
+      <div className="h-[400px] w-full overflow-hidden" ref={appRef}></div>
+      {isLoading && <Skeleton className="h-[400px] w-full rounded-md" />}
     </div>
   );
 }
-
-export default dynamic(() => Promise.resolve(Bubbles), {
-  ssr: false,
-});

@@ -2,17 +2,17 @@
 import * as PIXI from "pixi.js";
 
 import { PixiUtils } from "./pixi.utils";
-import { PriceChangePercentage } from "@/types/nav";
+import { CoingeckoCoinData, PriceChangePercentage } from "@/types/nav";
 
 export type GenerateCirclesParams = {
-  coins;
+  coins: CoingeckoCoinData[];
   bubbleSort: PriceChangePercentage;
   scalingFactor: number;
 };
 
 export const appConfig = {
-  width: typeof window !== "undefined" ? window.innerWidth - 16 : 100,
-  height: typeof window !== "undefined" ? window.innerHeight * 0.84 : 100,
+  width: 800,
+  height: 400,
   speed: 0.005,
   elasticity: 0.005,
   wallDamping: 0.5,
@@ -40,9 +40,8 @@ const changeSizeStep = 2;
 
 export class BubblesUtils {
   static getScalingFactor = (
-    data,
+    data: CoingeckoCoinData[],
     bubbleSort: PriceChangePercentage = PriceChangePercentage.HOUR,
-    appConfig,
   ): number => {
     if (!data) return 1;
     const max = data.map((item) => Math.abs(+item[bubbleSort]!));
@@ -54,21 +53,17 @@ export class BubblesUtils {
     }
 
     return (
-      Math.sqrt((appConfig.width * appConfig.height) / totalSquare) *
-      (appConfig.width > 920 ? 0.8 : 0.5)
+      Math.sqrt((width * height) / totalSquare) * (width > 920 ? 0.8 : 0.5)
     );
   };
 
   static update = (
-    circles,
+    circles: PIXI.Circle[],
     imageSprites: PIXI.Sprite[],
     textSprites: PIXI.Text[],
     text2Sprites: PIXI.Text[],
     circleGraphics: PIXI.Sprite[] = [],
-    isDragging: boolean = false,
   ) => {
-    const changeSizeStep = 2;
-
     return () => {
       for (let i = 0; i < circles.length; i++) {
         const circle = circles[i];
@@ -76,17 +71,6 @@ export class BubblesUtils {
         const imageSprite = imageSprites[i];
         const text = textSprites[i];
         const text2 = text2Sprites[i];
-
-        // Skip physics update if circle is being dragged
-        if (!circle.dragging) {
-          // Update circle position
-          circle.x += circle.vx;
-          circle.y += circle.vy;
-
-          // Update container position
-          const container = circleGraphic.parent as PIXI.Container;
-          container.position.set(circle.x, circle.y);
-        }
 
         const updateCircleChilds = () => {
           circleGraphic.texture = PixiUtils.createGradientTexture(
@@ -199,7 +183,10 @@ export class BubblesUtils {
     };
   };
 
-  static handleEmptySpaceClick = (event: MouseEvent, circles: Circle[]) => {
+  static handleEmptySpaceClick = (
+    event: MouseEvent,
+    circles: PIXI.Circle[],
+  ) => {
     const waveForce = 100; // Adjust the wave force as needed
 
     circles.forEach((circle) => {
@@ -214,7 +201,7 @@ export class BubblesUtils {
     });
   };
 
-  static handleMouseMove = (event: MouseEvent, circles: Circle[]) => {
+  static handleMouseMove = (event: MouseEvent, circles: PIXI.Circle[]) => {
     const index = circles.findIndex((circle) => circle.dragging);
 
     if (index !== -1) {
@@ -231,12 +218,11 @@ export class BubblesUtils {
   };
 
   static generateCircles = (
-    coins,
+    coins: CoingeckoCoinData[],
     scalingFactor: number,
     bubbleSort: PriceChangePercentage = PriceChangePercentage.HOUR,
-    appConfig,
   ) => {
-    const shapes = coins.map((item) => {
+    const shapes: PIXI.Circle[] = coins.map((item) => {
       const radius = Math.abs(item[bubbleSort]! * scalingFactor);
 
       const data = {
@@ -244,18 +230,18 @@ export class BubblesUtils {
         symbol: item.symbol.slice(0, 4),
         image: item.image,
         coinName: item.symbol,
-        x: Math.random() * (appConfig.width - radius * 2),
-        y: Math.random() * (appConfig.height - radius * 2),
-        vx: Math.random() * appConfig.speed * 2 - appConfig.speed,
-        vy: Math.random() * appConfig.speed * 2 - appConfig.speed,
+        x: Math.random() * (width - radius * 2),
+        y: Math.random() * (height - radius * 2),
+        vx: Math.random() * speed * 2 - speed,
+        vy: Math.random() * speed * 2 - speed,
         color: item[bubbleSort]! > 0 ? "green" : "red",
         targetRadius:
-          radius > appConfig.maxCircleSize
-            ? appConfig.maxCircleSize
-            : radius > appConfig.minCircleSize
+          radius > maxCircleSize
+            ? maxCircleSize
+            : radius > minCircleSize
               ? radius
-              : appConfig.minCircleSize,
-        radius: appConfig.minCircleSize,
+              : minCircleSize,
+        radius: minCircleSize,
         dragging: false,
         text2: null,
         [PriceChangePercentage.HOUR]: item[PriceChangePercentage.HOUR],
@@ -265,7 +251,8 @@ export class BubblesUtils {
         [PriceChangePercentage.YEAR]: item[PriceChangePercentage.YEAR],
       };
 
-      const shape = { ...data };
+      const shape = { ...data, text2: PixiUtils.createText2(data, bubbleSort) };
+
       return shape;
     });
 

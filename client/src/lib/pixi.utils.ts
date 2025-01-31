@@ -3,10 +3,12 @@
 import { PriceChangePercentage } from "@/types/nav";
 import * as PIXI from "pixi.js";
 
+const imageTextureCache: Map<string, PIXI.Texture> = new Map();
+
 const gradientTextureCache: Map<string, PIXI.Texture> = new Map();
 
 export class PixiUtils {
-  static createContainer = (circle) => {
+  static createContainer = (circle: PIXI.Circle) => {
     const container = new PIXI.Container();
     container.position.set(circle.x, circle.y);
     container.hitArea = new PIXI.Circle(0, 0, circle.radius);
@@ -14,25 +16,60 @@ export class PixiUtils {
     return container;
   };
 
-  static createImageSprite = (circle) => {
-    const imgUrl = `/assets/coins/${circle.id}.${"png"}`;
+  static createImageSprite = (circle: PIXI.Circle) => {
+    const imgUrl = `/dummy-token.jpg`;
 
-    const imageSprite = PIXI.Sprite.from(imgUrl);
-    const isFullSize = circle.radius * 0.3 < 10;
+    // Check if texture is already cached
+    if (imageTextureCache.has(imgUrl)) {
+      const texture = imageTextureCache.get(imgUrl)!;
+      const sprite = new PIXI.Sprite(texture);
 
-    imageSprite.anchor.set(0.5);
-    imageSprite.width = circle.radius * (isFullSize ? 1.2 : 0.5);
-    imageSprite.height = circle.radius * (isFullSize ? 1.2 : 0.5);
-    imageSprite.position = { x: 0, y: isFullSize ? 0 : -circle.radius / 2 };
-    return imageSprite;
+      const isFullSize = circle.radius * 0.3 < 10;
+
+      sprite.anchor.set(0.5);
+
+      sprite.width = circle.radius * (isFullSize ? 1.2 : 0.5);
+      sprite.height = circle.radius * (isFullSize ? 1.2 : 0.5);
+      sprite.position = { x: 0, y: isFullSize ? 0 : -circle.radius / 2 };
+
+      return sprite;
+    }
+
+    // If not cached, create new texture
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const source = new PIXI.ImageSource({
+          resource: image,
+        });
+
+        const texture = new PIXI.Texture({
+          source,
+        });
+
+        // Cache the texture
+        imageTextureCache.set(imgUrl, texture);
+
+        const sprite = new PIXI.Sprite(texture);
+        const isFullSize = circle.radius * 0.3 < 10;
+
+        sprite.anchor.set(0.5);
+        sprite.width = circle.radius * (isFullSize ? 1.2 : 0.5);
+        sprite.height = circle.radius * (isFullSize ? 1.2 : 0.5);
+        sprite.position = { x: 0, y: isFullSize ? 0 : -circle.radius / 2 };
+
+        resolve(sprite);
+      };
+
+      image.src = imgUrl;
+    });
   };
 
-  static createText = (circle) => {
-    const fontSize = circle.radius * 0.3;
-    const isTextVisible = fontSize > 10;
+  static createText = (circle: PIXI.Circle) => {
+    const fontSize = circle.radius * 0.4;
 
     const textStyle = new PIXI.TextStyle({
-      fontSize: isTextVisible ? fontSize + "px" : 0,
+      fontSize: fontSize + "px",
       fill: "#ffffff",
     });
 
@@ -42,12 +79,14 @@ export class PixiUtils {
     return text;
   };
 
-  static createText2 = (circle, bubbleSort: PriceChangePercentage) => {
+  static createText2 = (
+    circle: PIXI.Circle,
+    bubbleSort: PriceChangePercentage,
+  ) => {
     const fontSize = circle.radius * 0.3;
-    const isTextVisible = fontSize > 10;
 
     const text2Style = new PIXI.TextStyle({
-      fontSize: isTextVisible ? fontSize + "px" : 0,
+      fontSize: fontSize + "px",
       fill: "#ffffff",
     });
 

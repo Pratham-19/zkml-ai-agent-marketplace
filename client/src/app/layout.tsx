@@ -4,7 +4,10 @@ import { siteConfig } from "@/config/site";
 import { fontSans } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 // import { TailwindIndicator } from "@/src/components/tailwind-indicator";
-import Web3Provider from "@/components/web3-provider";
+// import Web3Provider from "@/components/web3-provider";
+import TrendingTokens from "@/components/trending-tokens";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +35,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
           fontSans.variable,
         )}
       >
-        <Web3Provider>{children}</Web3Provider>
+        {/* <Web3Provi÷\der> */}
+        <Navbar />
+        <TrendingTokens />
+        {children}
+        <Footer />
+        {/* </Web3Provi÷> */}
         {/* <TailwindIndicator /> */}
       </body>
     </html>

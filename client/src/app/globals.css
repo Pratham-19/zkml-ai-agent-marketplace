@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 20 14.3% 4.1%;
+    --background: 0, 0%, 0%;
     --foreground: 60 9.1% 97.8%;
     --card: 20 14.3% 4.1%;
     --card-foreground: 60 9.1% 97.8%;
@@ -56,7 +56,7 @@
   }
 }
 .animate-marquee {
-  animation: marquee 10s linear infinite;
+  animation: marquee 15s linear infinite;
 }
 .animate-marquee:hover {
   animation-play-state: paused;
